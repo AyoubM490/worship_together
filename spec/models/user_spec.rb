@@ -2,7 +2,7 @@ require "rails_helper"
 require "spec_helper"
 
 describe User do
-  let(:user) { User.create(name: "John Doe", email: "john@example.com", password: "123456") }
+  let(:user) { FactoryBot.create(:user) }
   subject { user }
 
   it { should respond_to(:name) }
