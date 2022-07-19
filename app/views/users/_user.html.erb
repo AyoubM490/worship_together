@@ -1,1 +1,4 @@
-<li><%= user.name %>: <%= user.email %></li>
+<li>
+  <%= user.name %>: <%= user.email %>
+  <%= link_to "delete", user, data: { turbo_method: :delete } %>
+</li>

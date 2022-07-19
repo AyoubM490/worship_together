@@ -63,6 +63,18 @@ describe "User Pages" do
       end
     end
 
+    describe "non-existant", type: :request do
+      before { get "/users/-1/edit" }
+
+      specify { expect(response).to redirect_to("/users") }
+
+      describe "follow redirect" do
+        before { visit "/users/-1/edit" }
+
+        it { should have_selector(".ALERT-danger", text: "Unable") }
+      end
+    end
+
     describe "with valid information" do
       before do
         fill_in "Username", with: "Janysa Doe"
@@ -118,6 +130,31 @@ describe "User Pages" do
         specify { expect(user.reload.name).not_to eq("") }
         specify { expect(user.reload.name).to eq(original_name) }
       end
+    end
+  end
+
+  describe "delete users" do
+    let! (:user) { FactoryBot.create(:user) }
+
+    before { visit "/users" }
+
+    it { should have_link("delete", href: "/users/#{user.id}") }
+
+    describe "redirects properly", type: :request do
+      before { delete "/users/#{user.id}" }
+
+      specify { expect(response).to redirect_to "/users" }
+    end
+
+    it "produces a delete message" do
+      click_link("delete", match: :first)
+      should have_selector(".ALERT-success")
+    end
+
+    it "removes a user from the system" do
+      expect do
+        click_link("delete", match: :first)
+      end.to change(User, :count).by(-1)
     end
   end
 end
