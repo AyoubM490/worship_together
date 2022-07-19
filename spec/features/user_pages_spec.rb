@@ -4,6 +4,28 @@ describe "User Pages" do
   subject { page }
 
   describe "show users" do
+    describe "individually" do
+      let (:user) { FactoryBot.create(:user) }
+
+      before { visit "/users/#{user.id}" }
+
+      it { should have_content(user.name) }
+      it { should have_content(user.email) }
+      it { should_not have_content(user.password) }
+    end
+
+    describe "non-existant", type: :request do
+      before { get "/users/-1" }
+
+      specify { expect(response).to redirect_to("/users") }
+
+      describe "follow redirect" do
+        before { visit "/users/-1" }
+
+        it { should have_selector(".ALERT-danger", text: "Unable") }
+      end
+    end
+
     describe "all" do
       before do
         25.times do |i|
@@ -60,6 +82,41 @@ describe "User Pages" do
         before { click_button("Submit") }
 
         it { should have_selector("p.ALERT-success", text: "Welcome") }
+      end
+
+      describe "redirects to profile page", type: :request do
+        before { post "/users", params: { user: { name: "John Doe", email: "jokesa.doe@example.com", password: "password" } } }
+
+        specify { expect(response).to redirect_to "/users/#{assigns(:user).id}" }
+      end
+    end
+  end
+
+  describe "editing users" do
+    let(:user) { FactoryBot.create(:user) }
+    let!(:original_name) { user.name }
+    let (:submit) { "Update user profile" }
+
+    before do
+      visit "users/#{user.id}/edit"
+    end
+
+    it { should have_field("Username", with: user.name) }
+    it { should have_field("Email", with: user.email) }
+    it { should have_field("Password") }
+
+    describe "with invalid information" do
+      before do
+        fill_in "Username", with: ""
+        fill_in "Email", with: ""
+        fill_in "Password", with: ""
+      end
+
+      describe "does not change data" do
+        before { click_button submit }
+
+        specify { expect(user.reload.name).not_to eq("") }
+        specify { expect(user.reload.name).to eq(original_name) }
       end
     end
   end
